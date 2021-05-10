@@ -1,4 +1,4 @@
-LDLIBS=-lssl -lcrypto
+LDLIBS=-lssl -lcrypto -lm
 CFLAGS=-Wall -pedantic
 
 PROGS=multiprimeRSA
