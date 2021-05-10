@@ -1,4 +1,6 @@
 #include <openssl/bn.h>
+#include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 void dump_buf(const char *text, unsigned char *buf, int buf_size) {
@@ -15,6 +17,20 @@ int main (int argc, const char *argv[]) {
         printf("Usage: multiprimeRSA <(numeric) message>\n");
         exit(0);
     }
+
+    int prime_size = 6;
+
+    int numeric_message = atoi(argv[1]);
+    // the message cannot be larger than the (public) modulus, as it would be reduced
+    // when decrypting, and the message detroyed
+    // the modulus is the porduct of the three primes, which are guaranteed to be at least
+    // prime_size bit long
+    double largest_message = pow(2, prime_size*3); // since there are three primes
+    if (numeric_message >= largest_message) {
+        printf("Can only encrypt block values smaller than %.0f\n", largest_message);
+        exit(0);
+    }
+
     BN_CTX *ctx = BN_CTX_new();
 
     // find three primes
@@ -22,10 +38,9 @@ int main (int argc, const char *argv[]) {
     BIGNUM *ret2 = BN_new();
     BIGNUM *ret3 = BN_new();
 
-    int size = 256;
-    BN_generate_prime_ex(ret1, size, 1, NULL, NULL, NULL);
-    BN_generate_prime_ex(ret2, size, 1, NULL, NULL, NULL);
-    BN_generate_prime_ex(ret3, size, 1, NULL, NULL, NULL);
+    BN_generate_prime_ex(ret1, prime_size, 1, NULL, NULL, NULL);
+    BN_generate_prime_ex(ret2, prime_size, 1, NULL, NULL, NULL);
+    BN_generate_prime_ex(ret3, prime_size, 1, NULL, NULL, NULL);
 
     // find modulus a.k.a. the first part of the public key
     BIGNUM *m = BN_new();
@@ -67,7 +82,7 @@ int main (int argc, const char *argv[]) {
 
     // encrypt
     BIGNUM *encrypted = BN_new();
-    BIGNUM *message = BN_new(); // content will be 100
+    BIGNUM *message = BN_new();
     const char *message_str = argv[1];
     printf("Cleartext message: [%s]\n", message_str);
     BN_dec2bn(&message, message_str);
